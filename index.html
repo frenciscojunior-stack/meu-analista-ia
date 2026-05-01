@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Análise Pré-Jogo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#00ff88;--green-dark:#00cc6a;--bg:#0a0a0a;--card:#141414;--border:#222;--text:#e8e8e8;--muted:#666}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:24px 16px 48px}
+.menu-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;width:44px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;margin-bottom:28px}
+.menu-btn span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,10vw,4rem);line-height:1;letter-spacing:1px;margin-bottom:8px}
+h1 span{color:var(--green)}
+.subtitle{color:var(--muted);font-size:.85rem;margin-bottom:32px}
+.subtitle span{margin:0 6px;opacity:.4}
+input[type="text"]{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:1rem;padding:16px 20px;outline:none;transition:border-color .2s;margin-bottom:12px}
+input[type="text"]:focus{border-color:var(--green)}
+input[type="text"]::placeholder{color:var(--muted)}
+button.analisar{width:100%;background:var(--green);color:#000;border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;padding:16px;cursor:pointer;transition:background .2s;margin-bottom:20px}
+button.analisar:hover{background:var(--green-dark)}
+button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
+.exemplos{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:32px}
+.exemplos-label{color:var(--muted);font-size:.8rem}
+.chip{background:transparent;border:1px solid var(--border);border-radius:999px;color:var(--text);font-size:.8rem;padding:6px 14px;cursor:pointer}
+.chip:hover{border-color:var(--green);color:var(--green)}
+#resultado{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;font-size:.9rem;line-height:1.7;display:none;white-space:pre-wrap;word-break:break-word}
+#resultado.erro{border-color:#5a1a1a;background:#1a0a0a;color:#ff6b6b}
+#resultado.visivel{display:block}
+.loader{display:none;text-align:center;padding:24px 0;color:var(--muted);font-size:.85rem}
+.loader.visivel{display:block}
+.dot{display:inline-block;animation:blink 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+#resultado strong{color:var(--green);font-weight:600}
+</style>
+</head>
+<body>
+<div class="menu-btn"><span></span><span></span><span></span></div>
+<h1>ANÁLISE <span>PRÉ-JOGO</span></h1>
+<p class="subtitle">IA com busca em tempo real<span>·</span>Dados reais<span>·</span>Análise profissional</p>
+<input type="text" id="jogo" placeholder="Ex: Flamengo x Palmeiras"/>
+<button class="analisar" id="btn" onclick="analisar()">ANALISAR</button>
+<div class="exemplos">
+<span class="exemplos-label">Exemplos:</span>
+<span class="chip" onclick="preencher('Fla x Pal')">Fla x Pal</span>
+<span class="chip" onclick="preencher('El Clásico')">El Clásico</span>
+<span class="chip" onclick="preencher('City x Arsenal')">City x Arsenal</span>
+<span class="chip" onclick="preencher('Majestoso')">Majestoso</span>
+</div>
+<div class="loader" id="loader">Analisando<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+<div id="resultado"></div>
+<script>
+function preencher(t){document.getElementById('jogo').value=t}
+async function analisar(){
+const jogo=document.getElementById('jogo').value.trim();
+const resultado=document.getElementById('resultado');
+const loader=document.getElementById('loader');
+const btn=document.getElementById('btn');
+if(!jogo){resultado.className='visivel erro';resultado.innerHTML='⚠️ Digite o nome do jogo.';return}
+btn.disabled=true;resultado.className='';resultado.innerHTML='';loader.className='visivel';
+try{
+const r=await fetch('/api/analisar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jogo})});
+if(!r.ok)throw new Error('Erro '+r.status);
+const d=await r.json();
+const texto=d.analise||d.content||d.text||JSON.stringify(d);
+loader.className='';resultado.className='visivel';
+resultado.innerHTML=texto.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+}catch(e){loader.className='';resultado.className='visivel erro';resultado.innerHTML='⚠️ '+(e.message||'Erro ao buscar análise.');}
+finally{btn.disabled=false}
+}
+document.getElementById('jogo').addEventListener('keydown',e=>{if(e.key==='Enter')analisar()});
+</script>
+</body>
+</html>
