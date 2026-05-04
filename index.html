@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -81,13 +81,12 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 <span class="chip" onclick="preencher('City x Arsenal')">City x Arsenal</span>
 <span class="chip" onclick="preencher('Majestoso')">Majestoso</span>
 </div>
-<div class="loader" id="loader">Analisando<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+<div class="loader" id="loader">Buscando dados em tempo real<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
 <div id="resultado"></div>
 
 <script>
-let historico = JSON.parse(localStorage.getItem('historico') || '[]');
-
-function salvarHistorico(){localStorage.setItem('historico', JSON.stringify(historico));}
+let historico = JSON.parse(localStorage.getItem('historico')||'[]');
+function salvarHistorico(){localStorage.setItem('historico',JSON.stringify(historico));}
 
 function abrirMenu(){
   document.getElementById('sidebar').classList.add('aberta');
@@ -100,24 +99,17 @@ function fecharMenu(){
 }
 
 function renderHistorico(){
-  const lista = document.getElementById('lista-historico');
-  const pct = document.getElementById('pct-acertos');
-  const total = document.getElementById('total-analises');
-  
-  const comResultado = historico.filter(h => h.resultado);
-  const acertos = historico.filter(h => h.resultado === 'acertou').length;
-  const pctVal = comResultado.length > 0 ? Math.round((acertos/comResultado.length)*100) : 0;
-  
-  pct.textContent = pctVal + '%';
-  total.textContent = historico.length + ' análises registradas';
-  
-  if(historico.length === 0){
-    lista.innerHTML = '<div class="sem-historico">Nenhuma análise ainda.<br>Faça sua primeira análise!</div>';
-    return;
-  }
-  
-  lista.innerHTML = historico.slice().reverse().map((h,i) => {
-    const idx = historico.length - 1 - i;
+  const lista=document.getElementById('lista-historico');
+  const pct=document.getElementById('pct-acertos');
+  const total=document.getElementById('total-analises');
+  const comResultado=historico.filter(h=>h.resultado);
+  const acertos=historico.filter(h=>h.resultado==='acertou').length;
+  const pctVal=comResultado.length>0?Math.round((acertos/comResultado.length)*100):0;
+  pct.textContent=pctVal+'%';
+  total.textContent=historico.length+' análises registradas';
+  if(historico.length===0){lista.innerHTML='<div class="sem-historico">Nenhuma análise ainda.<br>Faça sua primeira análise!</div>';return;}
+  lista.innerHTML=historico.slice().reverse().map((h,i)=>{
+    const idx=historico.length-1-i;
     return `<div class="historico-item">
       <div class="jogo-nome">⚽ ${h.jogo}</div>
       <div class="resultado-label">Resultado:</div>
@@ -127,8 +119,8 @@ function renderHistorico(){
   }).join('');
 }
 
-function marcarResultado(idx, res){
-  historico[idx].resultado = historico[idx].resultado === res ? null : res;
+function marcarResultado(idx,res){
+  historico[idx].resultado=historico[idx].resultado===res?null:res;
   salvarHistorico();
   renderHistorico();
 }
@@ -136,25 +128,69 @@ function marcarResultado(idx, res){
 function preencher(t){document.getElementById('jogo').value=t;}
 
 async function analisar(){
-  const jogo = document.getElementById('jogo').value.trim();
-  const resultado = document.getElementById('resultado');
-  const loader = document.getElementById('loader');
-  const btn = document.getElementById('btn');
+  const jogo=document.getElementById('jogo').value.trim();
+  const resultado=document.getElementById('resultado');
+  const loader=document.getElementById('loader');
+  const btn=document.getElementById('btn');
   if(!jogo){resultado.className='visivel erro';resultado.innerHTML='⚠️ Digite o nome do jogo.';return;}
-  btn.disabled=true;resultado.className='';resultado.innerHTML='';loader.className='visivel';
+  btn.disabled=true;
+  resultado.className='visivel';
+  resultado.innerHTML='';
+  loader.className='visivel';
+
   try{
-    const r = await fetch('/api/analisar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jogo})});
-    if(!r.ok) throw new Error('Erro '+r.status);
-    const d = await r.json();
-    const texto = d.analise || d.content || d.text || JSON.stringify(d);
-    loader.className='';resultado.className='visivel';
-    resultado.innerHTML = texto.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-    historico.push({jogo, data: new Date().toLocaleDateString('pt-BR'), resultado: null});
-    salvarHistorico();
+    const r=await fetch('/api/analisar',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jogo})
+    });
+
+    const reader=r.body.getReader();
+    const decoder=new TextDecoder();
+    let textoCompleto='';
+    let jogoSalvo=false;
+
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      const chunk=decoder.decode(value);
+      const lines=chunk.split('\n');
+      for(const line of lines){
+        if(line.startsWith('data: ')){
+          const data=line.slice(6);
+          if(data==='[DONE]'){
+            loader.className='';
+            if(!jogoSalvo && textoCompleto){
+              historico.push({jogo,data:new Date().toLocaleDateString('pt-BR'),resultado:null});
+              salvarHistorico();
+              jogoSalvo=true;
+            }
+            continue;
+          }
+          try{
+            const parsed=JSON.parse(data);
+            if(parsed.texto){
+              textoCompleto+=parsed.texto;
+              resultado.innerHTML=textoCompleto.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+            }
+            if(parsed.erro){
+              resultado.className='visivel erro';
+              resultado.innerHTML='⚠️ '+parsed.erro;
+              loader.className='';
+            }
+          }catch{}
+        }
+      }
+    }
   }catch(e){
-    loader.className='';resultado.className='visivel erro';resultado.innerHTML='⚠️ '+(e.message||'Erro ao buscar análise.');
-  }finally{btn.disabled=false;}
+    resultado.className='visivel erro';
+    resultado.innerHTML='⚠️ '+(e.message||'Erro ao buscar análise.');
+    loader.className='';
+  }finally{
+    btn.disabled=false;
+  }
 }
 document.getElementById('jogo').addEventListener('keydown',e=>{if(e.key==='Enter')analisar();});
 </script>
-</body 
+</body>
+</html>
