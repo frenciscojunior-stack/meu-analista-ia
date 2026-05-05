@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -44,15 +44,18 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 .acertos-box .numero{font-size:2.5rem;font-weight:700;color:var(--green)}
 .acertos-box .label{color:var(--muted);font-size:.8rem}
 .historico-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}
-.historico-item .jogo-nome{font-weight:600;font-size:.9rem;margin-bottom:8px;color:var(--green)}
-.historico-item .resultado-label{font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.historico-item .jogo-nome{font-weight:600;font-size:.9rem;margin-bottom:4px;color:var(--green)}
+.historico-item .data{font-size:.75rem;color:var(--muted);margin-bottom:8px}
+.resultado-label{font-size:.8rem;color:var(--muted);margin-bottom:4px}
 .btn-resultado{border:none;border-radius:6px;padding:4px 10px;font-size:.75rem;cursor:pointer;margin-right:6px;margin-top:4px}
 .btn-acertou{background:#1a4a2a;color:#00ff88}
 .btn-errou{background:#4a1a1a;color:#ff6b6b}
+.btn-apagar{background:#2a1a1a;color:#ff6b6b;margin-top:8px;display:block;width:100%}
 .btn-acertou.ativo{background:#00ff88;color:#000}
 .btn-errou.ativo{background:#ff6b6b;color:#000}
 .fechar-sidebar{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 16px;cursor:pointer;margin-bottom:20px;width:100%}
 .sem-historico{color:var(--muted);font-size:.85rem;text-align:center;padding:20px 0}
+.btn-apagar-tudo{background:transparent;border:1px solid #5a1a1a;color:#ff6b6b;border-radius:8px;padding:8px 16px;cursor:pointer;margin-bottom:16px;width:100%;font-size:.8rem}
 </style>
 </head>
 <body>
@@ -66,6 +69,7 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
     <div class="label">Taxa de acertos</div>
     <div style="color:var(--muted);font-size:.75rem;margin-top:4px" id="total-analises">0 análises registradas</div>
   </div>
+  <button class="btn-apagar-tudo" onclick="apagarTudo()">🗑️ Apagar todo o histórico</button>
   <div id="lista-historico"><div class="sem-historico">Nenhuma análise ainda.<br>Faça sua primeira análise!</div></div>
 </div>
 
@@ -85,7 +89,7 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 <div id="resultado"></div>
 
 <script>
-let historico = JSON.parse(localStorage.getItem('historico')||'[]');
+let historico=JSON.parse(localStorage.getItem('historico')||'[]');
 function salvarHistorico(){localStorage.setItem('historico',JSON.stringify(historico));}
 
 function abrirMenu(){
@@ -107,14 +111,19 @@ function renderHistorico(){
   const pctVal=comResultado.length>0?Math.round((acertos/comResultado.length)*100):0;
   pct.textContent=pctVal+'%';
   total.textContent=historico.length+' análises registradas';
-  if(historico.length===0){lista.innerHTML='<div class="sem-historico">Nenhuma análise ainda.<br>Faça sua primeira análise!</div>';return;}
+  if(historico.length===0){
+    lista.innerHTML='<div class="sem-historico">Nenhuma análise ainda.<br>Faça sua primeira análise!</div>';
+    return;
+  }
   lista.innerHTML=historico.slice().reverse().map((h,i)=>{
     const idx=historico.length-1-i;
     return `<div class="historico-item">
       <div class="jogo-nome">⚽ ${h.jogo}</div>
-      <div class="resultado-label">Resultado:</div>
+      <div class="data">📅 ${h.data}</div>
+      <div class="resultado-label">Marcar resultado:</div>
       <button class="btn-resultado btn-acertou ${h.resultado==='acertou'?'ativo':''}" onclick="marcarResultado(${idx},'acertou')">✅ Acertou</button>
       <button class="btn-resultado btn-errou ${h.resultado==='errou'?'ativo':''}" onclick="marcarResultado(${idx},'errou')">❌ Errou</button>
+      <button class="btn-resultado btn-apagar" onclick="apagarAnalise(${idx})">🗑️ Apagar</button>
     </div>`;
   }).join('');
 }
@@ -123,6 +132,22 @@ function marcarResultado(idx,res){
   historico[idx].resultado=historico[idx].resultado===res?null:res;
   salvarHistorico();
   renderHistorico();
+}
+
+function apagarAnalise(idx){
+  if(confirm('Apagar esta análise?')){
+    historico.splice(idx,1);
+    salvarHistorico();
+    renderHistorico();
+  }
+}
+
+function apagarTudo(){
+  if(confirm('Apagar TODO o histórico?')){
+    historico=[];
+    salvarHistorico();
+    renderHistorico();
+  }
 }
 
 function preencher(t){document.getElementById('jogo').value=t;}
@@ -160,7 +185,7 @@ async function analisar(){
           const data=line.slice(6);
           if(data==='[DONE]'){
             loader.className='';
-            if(!jogoSalvo && textoCompleto){
+            if(!jogoSalvo&&textoCompleto){
               historico.push({jogo,data:new Date().toLocaleDateString('pt-BR'),resultado:null});
               salvarHistorico();
               jogoSalvo=true;
@@ -193,4 +218,4 @@ async function analisar(){
 document.getElementById('jogo').addEventListener('keydown',e=>{if(e.key==='Enter')analisar();});
 </script>
 </body>
-</html>
+</html> 
