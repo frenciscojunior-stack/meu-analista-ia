@@ -26,40 +26,46 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens: 1500,
         stream: true,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
           content: `Você é um analista esportivo profissional. Busque dados atuais e faça uma análise pré-jogo COMPLETA do jogo: ${jogo}
 
-Estruture assim:
-⚽ CONFRONTO: [times e competição]
-📊 FORMA RECENTE: [últimos 5 jogos de cada time]
-🏆 HISTÓRICO: [confrontos diretos recentes]
-❌ DESFALQUES: [jogadores fora]
-🎯 PROGNÓSTICO:
-- Vitória time 1: XX%
-- Empate: XX%
-- Vitória time 2: XX%
-💡 PALPITE FINAL: [palpite direto e objetivo]
+Estruture EXATAMENTE assim:
 
-Seja direto. Não peça informações adicionais.`
+⚽ CONFRONTO: [times e competição]
+📊 FORMA RECENTE:
+- [Time 1]: [últimos 5 jogos]
+- [Time 2]: [últimos 5 jogos]
+🏆 HISTÓRICO DE CONFRONTOS: [últimos confrontos diretos]
+❌ DESFALQUES: [jogadores fora de cada time]
+📈 ESTATÍSTICAS:
+- Média de gols: [time 1] / [time 2]
+- Cartões amarelos por jogo: [time 1] / [time 2]
+- Escanteios por jogo: [time 1] / [time 2]
+🎯 PROBABILIDADES:
+- Vitória [time 1]: XX%
+- Empate: XX%
+- Vitória [time 2]: XX%
+- Mais de 2.5 gols: XX%
+- Menos de 2.5 gols: XX%
+💡 PALPITE FINAL: [time vencedor ou empate] - Seja direto e objetivo.
+
+Não peça informações adicionais. Sempre dê um palpite final claro.`
         }]
       })
     });
 
-    let texto = '';
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
       const chunk = decoder.decode(value);
       const lines = chunk.split('\n');
-      
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
@@ -67,7 +73,6 @@ Seja direto. Não peça informações adicionais.`
           try {
             const parsed = JSON.parse(data);
             if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-              texto += parsed.delta.text;
               res.write(`data: ${JSON.stringify({ texto: parsed.delta.text })}\n\n`);
             }
           } catch {}
