@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -52,7 +52,8 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 .acertos-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px;text-align:center}
 .acertos-box .numero{font-size:2.5rem;font-weight:700;color:var(--green)}
 .acertos-box .label{color:var(--muted);font-size:.8rem}
-.historico-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}
+.historico-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;cursor:pointer;transition:border-color .2s}
+.historico-item:hover{border-color:var(--green)}
 .historico-item .jogo-nome{font-weight:600;font-size:.9rem;margin-bottom:4px;color:var(--green)}
 .historico-item .data{font-size:.75rem;color:var(--muted);margin-bottom:6px}
 .historico-item .palpite-txt{font-size:.8rem;color:var(--muted);margin-bottom:6px}
@@ -65,11 +66,23 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 .fechar-sidebar{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 16px;cursor:pointer;margin-bottom:20px;width:100%}
 .sem-historico{color:var(--muted);font-size:.85rem;text-align:center;padding:20px 0}
 .btn-apagar-tudo{background:transparent;border:1px solid #5a1a1a;color:#ff6b6b;border-radius:8px;padding:8px 16px;cursor:pointer;margin-bottom:16px;width:100%;font-size:.8rem}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:20;overflow-y:auto;padding:24px 16px}
+.modal.aberto{display:block}
+.modal-content{background:#111;border:1px solid var(--border);border-radius:16px;padding:20px;max-width:600px;margin:0 auto}
+.modal-content h3{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1.5rem;margin-bottom:16px}
+.modal-analise{font-size:.9rem;line-height:1.7;white-space:pre-wrap;word-break:break-word;margin-bottom:20px}
+.modal-analise strong{color:var(--green)}
+.modal-resultado-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px}
+.modal-resultado-box h4{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1.1rem;margin-bottom:12px}
+.modal-resultado-box input{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;padding:12px 16px;outline:none;margin-bottom:10px}
+.modal-resultado-box input:focus{border-color:var(--green)}
+.btn-fechar-modal{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 16px;cursor:pointer;width:100%;margin-bottom:12px}
 </style>
 </head>
 <body>
 
 <div class="overlay" id="overlay" onclick="fecharMenu()"></div>
+
 <div class="sidebar" id="sidebar">
   <button class="fechar-sidebar" onclick="fecharMenu()">✕ Fechar</button>
   <h2>📊 Histórico</h2>
@@ -80,6 +93,20 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
   </div>
   <button class="btn-apagar-tudo" onclick="apagarTudo()">🗑️ Apagar todo o histórico</button>
   <div id="lista-historico"><div class="sem-historico">Nenhuma análise ainda.<br>Faça sua primeira análise!</div></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <button class="btn-fechar-modal" onclick="fecharModal()">✕ Fechar</button>
+    <h3 id="modal-titulo">Análise</h3>
+    <div class="modal-analise" id="modal-analise"></div>
+    <div class="modal-resultado-box" id="modal-resultado-box">
+      <h4>⚽ INSERIR RESULTADO FINAL</h4>
+      <input type="text" id="modal-placar" placeholder="Ex: 2x1 ou Bayern 2x1 PSG"/>
+      <button class="btn-confirmar" onclick="confirmarResultadoModal()">CONFIRMAR RESULTADO</button>
+      <div id="modal-badge"></div>
+    </div>
+  </div>
 </div>
 
 <div class="menu-btn" onclick="abrirMenu()"><span></span><span></span><span></span></div>
@@ -96,10 +123,9 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 </div>
 <div class="loader" id="loader">Buscando dados em tempo real<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
 <div id="resultado"></div>
-
 <div class="resultado-jogo-box" id="resultado-jogo-box">
   <h3>⚽ RESULTADO FINAL DO JOGO</h3>
-  <input type="text" id="placar-input" placeholder="Ex: 2x1 ou Flamengo 2x1 Palmeiras"/>
+  <input type="text" id="placar-input" placeholder="Ex: 2x1 ou Bayern 2x1 PSG"/>
   <button class="btn-confirmar" onclick="confirmarResultado()">CONFIRMAR RESULTADO</button>
   <div id="badge-resultado"></div>
 </div>
@@ -107,8 +133,8 @@ button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
 <script>
 let historico=JSON.parse(localStorage.getItem('historico')||'[]');
 let jogoAtual='';
-let palpiteAtual='';
 let idxAtual=-1;
+let modalIdx=-1;
 
 function salvarHistorico(){localStorage.setItem('historico',JSON.stringify(historico));}
 
@@ -120,6 +146,54 @@ function abrirMenu(){
 function fecharMenu(){
   document.getElementById('sidebar').classList.remove('aberta');
   document.getElementById('overlay').classList.remove('aberto');
+}
+
+function abrirModal(idx){
+  const h=historico[idx];
+  modalIdx=idx;
+  document.getElementById('modal-titulo').textContent='⚽ '+h.jogo+' — '+h.data;
+  const analiseHtml=(h.analise||'Análise não disponível').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  document.getElementById('modal-analise').innerHTML=analiseHtml;
+  document.getElementById('modal-placar').value=h.placar||'';
+  const badge=document.getElementById('modal-badge');
+  if(h.resultado){
+    badge.innerHTML=`<span class="badge ${h.resultado}" style="margin-top:8px;display:inline-block">${h.resultado==='acertou'?'✅ Acertou!':'❌ Errou'}</span>`;
+    document.getElementById('modal-resultado-box').style.display=h.resultado?'block':'block';
+  } else {
+    badge.innerHTML='';
+  }
+  document.getElementById('modal').classList.add('aberto');
+}
+
+function fecharModal(){
+  document.getElementById('modal').classList.remove('aberto');
+  modalIdx=-1;
+  renderHistorico();
+}
+
+function confirmarResultadoModal(){
+  const placar=document.getElementById('modal-placar').value.trim();
+  if(!placar||modalIdx<0) return;
+  const h=historico[modalIdx];
+  h.placar=placar;
+  const palpite=(h.palpite||'').toLowerCase();
+  const placarLower=placar.toLowerCase();
+  const times=h.jogo.toLowerCase().split(/\s*x\s*/);
+  const time1=times[0]?.trim()||'';
+  const time2=times[1]?.trim()||'';
+  const nums=placarLower.match(/(\d+)\s*[x×]\s*(\d+)/);
+  let acertou=false;
+  if(nums){
+    const g1=parseInt(nums[1]);
+    const g2=parseInt(nums[2]);
+    if(g1>g2&&palpite.includes(time1)) acertou=true;
+    else if(g2>g1&&palpite.includes(time2)) acertou=true;
+    else if(g1===g2&&(palpite.includes('empate')||palpite.includes('draw'))) acertou=true;
+  }
+  h.resultado=acertou?'acertou':'errou';
+  salvarHistorico();
+  const badge=document.getElementById('modal-badge');
+  badge.innerHTML=`<span class="badge ${acertou?'acertou':'errou'}" style="margin-top:8px;display:inline-block">${acertou?'✅ Palpite CERTO!':'❌ Palpite ERRADO'}</span>`;
 }
 
 function renderHistorico(){
@@ -137,18 +211,14 @@ function renderHistorico(){
   }
   lista.innerHTML=historico.slice().reverse().map((h,i)=>{
     const idx=historico.length-1-i;
-    const badgeHtml=h.resultado?`<span class="badge ${h.resultado}">${h.resultado==='acertou'?'✅ Acertou':'❌ Errou'}</span>`:'';
-    return `<div class="historico-item">
+    const badgeHtml=h.resultado?`<span class="badge ${h.resultado}" style="display:inline-block;margin-top:6px">${h.resultado==='acertou'?'✅ Acertou':'❌ Errou'}</span>`:'<span style="color:var(--muted);font-size:.75rem">⏳ Aguardando resultado</span>';
+    return `<div class="historico-item" onclick="abrirModal(${idx})">
       <div class="jogo-nome">⚽ ${h.jogo}</div>
       <div class="data">📅 ${h.data}</div>
-      ${h.palpite?`<div class="palpite-txt">🎯 Palpite: ${h.palpite}</div>`:''}
       ${h.placar?`<div class="palpite-txt">📊 Resultado: ${h.placar}</div>`:''}
       ${badgeHtml}
-      ${!h.resultado?`<div style="margin-top:8px">
-        <button class="btn-resultado btn-acertou" onclick="marcarResultado(${idx},'acertou')">✅ Acertou</button>
-        <button class="btn-resultado btn-errou" onclick="marcarResultado(${idx},'errou')">❌ Errou</button>
-      </div>`:''}
-      <button class="btn-resultado btn-apagar" onclick="apagarAnalise(${idx})">🗑️ Apagar</button>
+      <div style="margin-top:8px;font-size:.75rem;color:var(--green)">👆 Toque para abrir análise</div>
+      <button class="btn-resultado btn-apagar" onclick="event.stopPropagation();apagarAnalise(${idx})">🗑️ Apagar</button>
     </div>`;
   }).join('');
 }
@@ -189,33 +259,27 @@ function extrairPalpite(texto){
 
 function confirmarResultado(){
   const placar=document.getElementById('placar-input').value.trim();
-  if(!placar) return;
-  const badge=document.getElementById('badge-resultado');
-
-  if(idxAtual>=0 && idxAtual<historico.length){
-    historico[idxAtual].placar=placar;
-    const palpite=(historico[idxAtual].palpite||'').toLowerCase();
-    const placarLower=placar.toLowerCase();
-    let acertou=false;
-
-    const times=jogoAtual.toLowerCase().split(/\s*x\s*/);
-    const time1=times[0]?.trim()||'';
-    const time2=times[1]?.trim()||'';
-
-    const nums=placarLower.match(/(\d+)\s*x\s*(\d+)/);
-    if(nums){
-      const g1=parseInt(nums[1]);
-      const g2=parseInt(nums[2]);
-      if(g1>g2 && palpite.includes(time1)) acertou=true;
-      else if(g2>g1 && palpite.includes(time2)) acertou=true;
-      else if(g1===g2 && (palpite.includes('empate')||palpite.includes('draw'))) acertou=true;
-    }
-
-    historico[idxAtual].resultado=acertou?'acertou':'errou';
-    salvarHistorico();
-
-    badge.innerHTML=`<span class="badge ${acertou?'acertou':'errou'}">${acertou?'✅ Palpite CERTO!':'❌ Palpite ERRADO'}</span>`;
+  if(!placar||idxAtual<0) return;
+  const h=historico[idxAtual];
+  h.placar=placar;
+  const palpite=(h.palpite||'').toLowerCase();
+  const placarLower=placar.toLowerCase();
+  const times=jogoAtual.toLowerCase().split(/\s*x\s*/);
+  const time1=times[0]?.trim()||'';
+  const time2=times[1]?.trim()||'';
+  const nums=placarLower.match(/(\d+)\s*[x×]\s*(\d+)/);
+  let acertou=false;
+  if(nums){
+    const g1=parseInt(nums[1]);
+    const g2=parseInt(nums[2]);
+    if(g1>g2&&palpite.includes(time1)) acertou=true;
+    else if(g2>g1&&palpite.includes(time2)) acertou=true;
+    else if(g1===g2&&(palpite.includes('empate')||palpite.includes('draw'))) acertou=true;
   }
+  h.resultado=acertou?'acertou':'errou';
+  salvarHistorico();
+  const badge=document.getElementById('badge-resultado');
+  badge.innerHTML=`<span class="badge ${acertou?'acertou':'errou'}">${acertou?'✅ Palpite CERTO!':'❌ Palpite ERRADO'}</span>`;
 }
 
 async function analisar(){
@@ -226,9 +290,7 @@ async function analisar(){
   const boxResultado=document.getElementById('resultado-jogo-box');
   const badge=document.getElementById('badge-resultado');
   const placarInput=document.getElementById('placar-input');
-
   if(!jogo){resultado.className='visivel erro';resultado.innerHTML='⚠️ Digite o nome do jogo.';return;}
-
   btn.disabled=true;
   resultado.className='visivel';
   resultado.innerHTML='';
@@ -239,12 +301,7 @@ async function analisar(){
   jogoAtual=jogo;
 
   try{
-    const r=await fetch('/api/analisar',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jogo})
-    });
-
+    const r=await fetch('/api/analisar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jogo})});
     const reader=r.body.getReader();
     const decoder=new TextDecoder();
     let textoCompleto='';
@@ -261,8 +318,8 @@ async function analisar(){
           if(data==='[DONE]'){
             loader.className='';
             if(!jogoSalvo&&textoCompleto){
-              palpiteAtual=extrairPalpite(textoCompleto);
-              historico.push({jogo,data:new Date().toLocaleDateString('pt-BR'),palpite:palpiteAtual,resultado:null});
+              const palpite=extrairPalpite(textoCompleto);
+              historico.push({jogo,data:new Date().toLocaleDateString('pt-BR'),palpite,analise:textoCompleto,resultado:null});
               idxAtual=historico.length-1;
               salvarHistorico();
               jogoSalvo=true;
@@ -289,11 +346,9 @@ async function analisar(){
     resultado.className='visivel erro';
     resultado.innerHTML='⚠️ '+(e.message||'Erro ao buscar análise.');
     loader.className='';
-  }finally{
-    btn.disabled=false;
-  }
+  }finally{btn.disabled=false;}
 }
 document.getElementById('jogo').addEventListener('keydown',e=>{if(e.key==='Enter')analisar();});
 </script>
 </body>
-</html> 
+</html>
