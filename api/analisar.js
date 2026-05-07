@@ -26,34 +26,53 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1500,
+        max_tokens: 2000,
         stream: true,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
           content: `Você é um analista esportivo profissional. Busque dados atuais e faça uma análise pré-jogo COMPLETA do jogo: ${jogo}
 
-Estruture EXATAMENTE assim:
+Estruture EXATAMENTE assim, sem pular nenhuma seção:
 
 ⚽ CONFRONTO: [times e competição]
+
 📊 FORMA RECENTE:
 - [Time 1]: [últimos 5 jogos]
 - [Time 2]: [últimos 5 jogos]
-🏆 HISTÓRICO DE CONFRONTOS: [últimos confrontos diretos]
-❌ DESFALQUES: [jogadores fora de cada time]
+
+🏆 HISTÓRICO DE CONFRONTOS: [últimos 5 confrontos diretos com placares]
+
+❌ DESFALQUES:
+- [Time 1]: [jogadores fora]
+- [Time 2]: [jogadores fora]
+
 📈 ESTATÍSTICAS:
-- Média de gols: [time 1] / [time 2]
-- Cartões amarelos por jogo: [time 1] / [time 2]
-- Escanteios por jogo: [time 1] / [time 2]
+- Posse de bola: [time 1] XX% / [time 2] XX%
+- Média de gols marcados: [time 1] X.X / [time 2] X.X
+- Média de gols sofridos: [time 1] X.X / [time 2] X.X
+- Cartões amarelos por jogo: [time 1] X.X / [time 2] X.X
+- Escanteios por jogo: [time 1] X.X / [time 2] X.X
+
+💰 ODDS DAS CASAS DE APOSTAS:
+- Vitória [time 1]: X.XX
+- Empate: X.XX
+- Vitória [time 2]: X.XX
+- Mais de 2.5 gols: X.XX
+- Menos de 2.5 gols: X.XX
+- Ambos marcam (Sim): X.XX
+- Ambos marcam (Não): X.XX
+
 🎯 PROBABILIDADES:
 - Vitória [time 1]: XX%
 - Empate: XX%
 - Vitória [time 2]: XX%
 - Mais de 2.5 gols: XX%
 - Menos de 2.5 gols: XX%
-💡 PALPITE FINAL: [time vencedor ou empate] - Seja direto e objetivo.
 
-Não peça informações adicionais. Sempre dê um palpite final claro.`
+💡 PALPITE FINAL: [time vencedor ou empate] — [justificativa objetiva em 2 linhas]
+
+Não peça informações adicionais. Sempre dê um palpite final claro com o nome do time vencedor ou "Empate".`
         }]
       })
     });
