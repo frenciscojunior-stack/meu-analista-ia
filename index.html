@@ -1,141 +1,127 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Analista IA | Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <title>Meu Analista IA</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg: #0a0a0a; --card: #151515; --accent: #00ff88; --text: #ffffff; --text-dim: #b0b0b0; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
-        h1, h2, h3 { font-family: 'Bebas Neue', cursive; letter-spacing: 1px; color: var(--accent); }
-        .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent); text-align: center; }
-        .search-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 20px; }
-        input, select, textarea { background: #222; border: 1px solid #333; color: white; padding: 12px; border-radius: 5px; outline: none; width: 100%; }
-        button { background: var(--accent); color: #000; border: none; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; font-family: 'Bebas Neue'; }
-        .analysis-output { background: var(--card); padding: 20px; border-radius: 10px; display: none; margin-bottom: 20px; border: 1px solid #333; }
-        .history-item { background: #111; border: 1px solid #222; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .win { border-left: 5px solid #00ff88; }
-        .loss { border-left: 5px solid #ff4444; }
-        #stream-text { white-space: pre-wrap; margin-top: 15px; font-size: 0.95rem; line-height: 1.6; }
+        body { background-color: #0a0a0a; color: #ffffff; }
+        .neon-border { border: 1px solid #00ff88; box-shadow: 0 0 10px #00ff8833; }
+        .bg-card { background-color: #121212; }
     </style>
 </head>
-<body>
-<div style="text-align: center; margin-bottom: 25px;">
-    <h1>MEU ANALISTA IA</h1>
-    <p style="color: var(--text-dim)">Inteligência Esportiva para Decisões Precisas</p>
-</div>
-<div class="stats-bar">
-    <div class="stat-card"><small>TAXA DE ACERTO</small><h2 id="win-rate">0%</h2></div>
-    <div class="stat-card"><small>TOTAL GREEN</small><h2 id="total-wins">0</h2></div>
-    <div class="stat-card"><small>TOTAL RED</small><h2 id="total-loss">0</h2></div>
-</div>
-<div class="search-grid">
-    <input type="text" id="match-input" placeholder="Ex: Flamengo x Palmeiras">
-    <select id="league-select">
-        <option value="Brasileirão">Brasileirão</option>
-        <option value="Champions League">Champions League</option>
-        <option value="Premier League">Premier League</option>
-        <option value="Outros">Outros</option>
-    </select>
-    <button onclick="iniciarAnalise()">ANALISAR</button>
-</div>
-<div id="loading" style="display:none; color: var(--accent); text-align: center; margin: 20px;">Processando dados em tempo real...</div>
-<div id="result-display" class="analysis-output">
-    <h2 id="match-title"></h2>
-    <div id="stream-text"></div>
-    <div style="height: 250px; margin-top: 20px;"><canvas id="probChart"></canvas></div>
-</div>
-<div id="history-section">
-    <h3>HISTÓRICO DE ANÁLISES</h3>
-    <div id="history-list"></div>
-</div>
-<script>
-    let history = JSON.parse(localStorage.getItem('fut_history')) || [];
-    let myChart;
-    function updateStats() {
-        const wins = history.filter(h => h.status === 'win').length;
-        const losses = history.filter(h => h.status === 'loss').length;
-        const total = wins + losses;
-        document.getElementById('total-wins').innerText = wins;
-        document.getElementById('total-loss').innerText = losses;
-        document.getElementById('win-rate').innerText = total > 0 ? ((wins / total) * 100).toFixed(0) + '%' : '0%';
-        renderHistory();
-    }
-    async function iniciarAnalise() {
-        const match = document.getElementById('match-input').value;
-        const league = document.getElementById('league-select').value;
-        if(!match) return;
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('result-display').style.display = 'block';
-        const streamDiv = document.getElementById('stream-text');
-        streamDiv.innerText = "";
-        try {
-            const response = await fetch('/api/analisar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ match, league })
-            });
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let fullText = "";
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                const chunk = decoder.decode(value);
-                fullText += chunk;
-                streamDiv.innerText = fullText;
-            }
-            renderChart(50, 20, 30);
-            saveToHistory(match, league, fullText);
-        } catch (e) { alert("Erro na conexão"); }
-        finally { document.getElementById('loading').style.display = 'none'; }
-    }
-    function renderChart(h, d, a) {
-        const ctx = document.getElementById('probChart').getContext('2d');
-        if(myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Casa', 'Empate', 'Fora'],
-                datasets: [{ data: [h, d, a], backgroundColor: ['#00ff88', '#333', '#555'], borderWidth: 0 }]
-            },
-            options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } } }
-        });
-    }
-    function saveToHistory(match, league, analysis) {
-        history.unshift({ id: Date.now(), match, league, analysis, status: 'pending' });
-        localStorage.setItem('fut_history', JSON.stringify(history));
-        updateStats();
-    }
-    function renderHistory() {
-        const list = document.getElementById('history-list');
-        list.innerHTML = history.map(item => `
-            <div class="history-item ${item.status}">
-                <div><strong>${item.match}</strong> | <small>${item.league}</small></div>
-                <div>
-                    <button onclick="setStatus(${item.id}, 'win')">✅</button>
-                    <button onclick="setStatus(${item.id}, 'loss')">❌</button>
-                    <button onclick="deleteItem(${item.id})">🗑️</button>
-                </div>
+<body class="p-4 md:p-8">
+    <div class="max-w-2xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-black text-[#00ff88] mb-2">MEU ANALISTA IA</h1>
+            <p class="text-gray-400">Inteligência Esportiva para Decisões Precisas</p>
+        </header>
+
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-card p-4 rounded-xl neon-border text-center">
+                <p class="text-xs text-gray-400 uppercase">Taxa de Acerto</p>
+                <p class="text-2xl font-bold" id="winRate">0%</p>
             </div>
-        `).join('');
-    }
-    function setStatus(id, status) {
-        const idx = history.findIndex(h => h.id === id);
-        history[idx].status = status;
-        localStorage.setItem('fut_history', JSON.stringify(history));
-        updateStats();
-    }
-    function deleteItem(id) {
-        history = history.filter(h => h.id !== id);
-        localStorage.setItem('fut_history', JSON.stringify(history));
-        updateStats();
-    }
-    updateStats();
-</script>
+            <div class="bg-card p-4 rounded-xl border border-gray-800 text-center">
+                <p class="text-xs text-gray-400 uppercase">Total Green</p>
+                <p class="text-2xl font-bold text-[#00ff88]" id="totalGreen">0</p>
+            </div>
+            <div class="bg-card p-4 rounded-xl border border-gray-800 text-center">
+                <p class="text-xs text-gray-400 uppercase">Total Red</p>
+                <p class="text-2xl font-bold text-red-500" id="totalRed">0</p>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+            <input type="text" id="matchInput" placeholder="Ex: Liverpool x Chelsea" class="flex-1 bg-card border border-gray-800 p-4 rounded-xl focus:outline-none focus:border-[#00ff88]">
+            <select id="leagueSelect" class="bg-card border border-gray-800 p-4 rounded-xl">
+                <option value="Brasileirão">Brasileirão</option>
+                <option value="Premier League">Premier League</option>
+                <option value="Champions League">Champions League</option>
+            </select>
+            <button onclick="analisarJogo()" id="btnAnalisar" class="bg-[#00ff88] text-black font-bold px-6 rounded-xl hover:bg-[#00cc6e] transition-all">ANALISAR</button>
+        </div>
+
+        <div id="resultadoArea" class="hidden bg-card p-6 rounded-2xl border border-gray-800 mb-8">
+            <div id="loading" class="hidden text-center p-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00ff88] mx-auto mb-4"></div>
+                <p>Processando dados em tempo real...</p>
+            </div>
+            
+            <div id="analiseTexto" class="prose prose-invert max-w-none mb-6 text-gray-300"></div>
+            
+            <div class="max-w-[300px] mx-auto">
+                <canvas id="probChart"></canvas>
+            </div>
+        </div>
+
+        <h3 class="text-[#00ff88] font-bold mb-4 uppercase tracking-widest text-sm">Histórico de Análises</h3>
+        <div id="historico" class="space-y-3"></div>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        async function analisarJogo() {
+            const match = document.getElementById('matchInput').value;
+            const league = document.getElementById('leagueSelect').value;
+            const btn = document.getElementById('btnAnalisar');
+            const textoArea = document.getElementById('analiseTexto');
+            
+            if(!match) return alert("Digite o nome do jogo!");
+
+            document.getElementById('resultadoArea').classList.remove('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            textoArea.innerHTML = "";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/analisar', {
+                    method: 'POST',
+                    body: JSON.stringify({ match, league })
+                });
+
+                if (!response.ok) throw new Error('Erro na resposta do servidor');
+
+                document.getElementById('loading').classList.add('hidden');
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    textoArea.innerHTML += decoder.decode(value);
+                }
+
+                atualizarGrafico();
+            } catch (error) {
+                textoArea.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function atualizarGrafico() {
+            const ctx = document.getElementById('probChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Casa', 'Empate', 'Fora'],
+                    datasets: [{
+                        data: [45, 25, 30],
+                        backgroundColor: ['#00ff88', '#333', '#666'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { labels: { color: '#fff' } } } }
+            });
+        }
+    </script>
 </body>
 </html>
+ 
