@@ -1,28 +1,43 @@
-const { Anthropic } = require('@anthropic-ai/sdk');
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import Anthropic from '@anthropic-ai/sdk';
 
-export default async function handler(req, res) {
-  const { match, league } = req.body;
-  const prompt = `Analise o jogo: ${match} (${league}). 
-  Forneça: 
-  1. Forma atual dos times.
-  2. Desfalques importantes.
-  3. Estatísticas de posse e gols.
-  4. Comparação de Odds e onde está o VALOR.
-  5. Palpite final objetivo.`;
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req) {
   try {
-    const stream = await anthropic.messages.create({
+    const { match, league } = await req.json();
+
+    const response = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20240620",
       max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }],
       stream: true,
+      messages: [
+        { role: "user", content: `Analise o jogo: ${match} da liga ${league}. Seja técnico e dê palpites.` }
+      ],
     });
-    res.setHeader('Content-Type', 'text/event-stream');
-    for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta') res.write(chunk.delta.text);
-    }
-    res.end();
-  } catch (error) { res.status(500).json({ error: "Erro na API" }); }
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of response) {
+          if (chunk.type === 'content_block_delta') {
+            controller.enqueue(encoder.encode(chunk.delta.text));
+          }
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
 }
  
