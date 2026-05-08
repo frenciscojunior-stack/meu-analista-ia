@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+ import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -13,7 +13,7 @@ export default async function handler(req) {
     const { match, league } = await req.json();
 
     const response = await anthropic.messages.create({
-      model:  "claude-3-opus-20240229", 
+      model: "claude-3-opus-20240229",
       max_tokens: 1000,
       stream: true,
       messages: [
@@ -40,4 +40,3 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
- 
