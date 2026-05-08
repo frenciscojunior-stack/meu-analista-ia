@@ -1,108 +1,28 @@
-export const config = { maxDuration: 60 };
+const { Anthropic } = require('@anthropic-ai/sdk');
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const { jogo } = req.body;
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  const { match, league } = req.body;
+  const prompt = `Analise o jogo: ${match} (${league}). 
+  Forneça: 
+  1. Forma atual dos times.
+  2. Desfalques importantes.
+  3. Estatísticas de posse e gols.
+  4. Comparação de Odds e onde está o VALOR.
+  5. Palpite final objetivo.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'web-search-2025-03-05',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
-        stream: true,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{
-          role: 'user',
-          content: `Você é um analista esportivo profissional. Busque dados atuais e faça uma análise pré-jogo COMPLETA do jogo: ${jogo}
-
-Estruture EXATAMENTE assim, sem pular nenhuma seção:
-
-⚽ CONFRONTO: [times e competição]
-
-📊 FORMA RECENTE:
-- [Time 1]: [últimos 5 jogos]
-- [Time 2]: [últimos 5 jogos]
-
-🏆 HISTÓRICO DE CONFRONTOS: [últimos 5 confrontos diretos com placares]
-
-❌ DESFALQUES:
-- [Time 1]: [jogadores fora]
-- [Time 2]: [jogadores fora]
-
-📈 ESTATÍSTICAS:
-- Posse de bola: [time 1] XX% / [time 2] XX%
-- Média de gols marcados: [time 1] X.X / [time 2] X.X
-- Média de gols sofridos: [time 1] X.X / [time 2] X.X
-- Cartões amarelos por jogo: [time 1] X.X / [time 2] X.X
-- Escanteios por jogo: [time 1] X.X / [time 2] X.X
-
-💰 ODDS DAS CASAS DE APOSTAS:
-- Vitória [time 1]: X.XX
-- Empate: X.XX
-- Vitória [time 2]: X.XX
-- Mais de 2.5 gols: X.XX
-- Menos de 2.5 gols: X.XX
-- Ambos marcam (Sim): X.XX
-- Ambos marcam (Não): X.XX
-
-🎯 PROBABILIDADES:
-- Vitória [time 1]: XX%
-- Empate: XX%
-- Vitória [time 2]: XX%
-- Mais de 2.5 gols: XX%
-- Menos de 2.5 gols: XX%
-
-💡 PALPITE FINAL: [time vencedor ou empate] — [justificativa objetiva em 2 linhas]
-
-Não peça informações adicionais. Sempre dê um palpite final claro com o nome do time vencedor ou "Empate".`
-        }]
-      })
+    const stream = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20240620",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }],
+      stream: true,
     });
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-              res.write(`data: ${JSON.stringify({ texto: parsed.delta.text })}\n\n`);
-            }
-          } catch {}
-        }
-      }
+    res.setHeader('Content-Type', 'text/event-stream');
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta') res.write(chunk.delta.text);
     }
-
-    res.write('data: [DONE]\n\n');
     res.end();
-  } catch (erro) {
-    res.write(`data: ${JSON.stringify({ erro: erro.message })}\n\n`);
-    res.end();
-  }
-} 
+  } catch (error) { res.status(500).json({ error: "Erro na API" }); }
+}
+ 
