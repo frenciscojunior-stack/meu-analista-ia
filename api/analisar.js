@@ -31,32 +31,33 @@ export default async function handler(req, res) {
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
-          content: `Você é um analista esportivo profissional de alto nível. Busque dados atuais e faça uma análise pré-jogo COMPLETA e PROFISSIONAL do jogo: ${jogo}
+          content: `Você é um analista esportivo profissional. Busque dados sobre o jogo: ${jogo}
+
+REGRA IMPORTANTE: Se não encontrar algum dado específico, use sua base de conhecimento para estimar. NUNCA deixe uma seção em branco ou diga que não encontrou dados. Sempre complete todas as seções com o melhor dado disponível ou uma estimativa fundamentada.
 
 Estruture EXATAMENTE assim:
 
-⚽ CONFRONTO: [times, competição, data e horário se disponível]
+⚽ CONFRONTO: [times, competição, data e horário]
 
 📊 FORMA RECENTE:
-- [Time 1]: [últimos 5 jogos com placares]
-- [Time 2]: [últimos 5 jogos com placares]
+- [Time 1]: [últimos 5 jogos]
+- [Time 2]: [últimos 5 jogos]
 
-🏆 HISTÓRICO DE CONFRONTOS: [últimos 5 confrontos diretos com placares e datas]
+🏆 HISTÓRICO: [últimos confrontos diretos com placares]
 
-❌ DESFALQUES E RETORNOS:
-- [Time 1]: [lesionados, suspensos e possíveis retornos]
-- [Time 2]: [lesionados, suspensos e possíveis retornos]
+❌ DESFALQUES:
+- [Time 1]: [lesionados e suspensos]
+- [Time 2]: [lesionados e suspensos]
 
-📈 ESTATÍSTICAS COMPARATIVAS:
+📈 ESTATÍSTICAS:
 - Posse de bola: [time 1] XX% / [time 2] XX%
 - Média de gols marcados: [time 1] X.X / [time 2] X.X
 - Média de gols sofridos: [time 1] X.X / [time 2] X.X
 - Cartões amarelos por jogo: [time 1] X.X / [time 2] X.X
-- Cartões vermelhos por jogo: [time 1] X.X / [time 2] X.X
 - Escanteios por jogo: [time 1] X.X / [time 2] X.X
 - Chutes a gol por jogo: [time 1] X.X / [time 2] X.X
 
-💰 ODDS DAS CASAS DE APOSTAS:
+💰 ODDS:
 - Vitória [time 1]: X.XX
 - Empate: X.XX
 - Vitória [time 2]: X.XX
@@ -65,7 +66,7 @@ Estruture EXATAMENTE assim:
 - Ambos marcam (Sim): X.XX
 - Ambos marcam (Não): X.XX
 
-🎯 PROBABILIDADES CALCULADAS:
+🎯 PROBABILIDADES:
 - Vitória [time 1]: XX%
 - Empate: XX%
 - Vitória [time 2]: XX%
@@ -74,14 +75,12 @@ Estruture EXATAMENTE assim:
 - Ambos marcam: XX%
 
 ⭐ JOGADORES CHAVE:
-- [Time 1]: [2-3 jogadores decisivos com stats recentes]
-- [Time 2]: [2-3 jogadores decisivos com stats recentes]
+- [Time 1]: [2-3 jogadores decisivos]
+- [Time 2]: [2-3 jogadores decisivos]
 
-💡 PALPITE FINAL: [nome do time vencedor ou "Empate"] — [justificativa objetiva em 3 linhas máximo]
+💡 PALPITE FINAL: [nome do time ou Empate] — [justificativa em 2 linhas]
 
-🎰 MELHOR APOSTA: [mercado com melhor valor baseado nas odds vs probabilidades reais]
-
-Seja direto e objetivo. Não peça informações adicionais.`
+🎰 MELHOR APOSTA: [mercado recomendado com odd]`
         }]
       })
     });
