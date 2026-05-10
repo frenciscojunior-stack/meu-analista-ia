@@ -1,0 +1,26 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fundo escuro -->
+  <rect width="512" height="512" rx="80" fill="#0a0a0a"/>
+  
+  <!-- Gráfico de barras -->
+  <rect x="60" y="280" width="80" height="160" rx="8" fill="#00ff88"/>
+  <rect x="180" y="200" width="80" height="240" rx="8" fill="#00cc6a"/>
+  <rect x="300" y="140" width="80" height="300" rx="8" fill="#00ff88"/>
+  
+  <!-- Linha de base -->
+  <rect x="40" y="450" width="380" height="8" rx="4" fill="#333"/>
+  
+  <!-- Bola de futebol -->
+  <circle cx="420" cy="100" r="75" fill="white"/>
+  <circle cx="420" cy="100" r="75" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+  
+  <!-- Pentágonos da bola -->
+  <polygon points="420,55 450,75 440,110 400,110 390,75" fill="#0a0a0a"/>
+  <polygon points="420,55 390,35 360,55 365,90 390,75" fill="#0a0a0a" opacity="0.15"/>
+  <polygon points="420,55 450,35 480,55 475,90 450,75" fill="#0a0a0a" opacity="0.15"/>
+  <polygon points="400,110 365,90 350,120 370,145 400,140" fill="#0a0a0a" opacity="0.15"/>
+  <polygon points="440,110 475,90 490,120 470,145 440,140" fill="#0a0a0a" opacity="0.15"/>
+  
+  <!-- Texto IA -->
+  <text x="256" y="510" font-family="Arial Black" font-size="40" font-weight="900" fill="#00ff88" text-anchor="middle" opacity="0">IA</text>
+</svg>
