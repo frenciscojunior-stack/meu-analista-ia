@@ -1,127 +1,514 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+ <!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Analista IA</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0a0a0a; color: #ffffff; }
-        .neon-border { border: 1px solid #00ff88; box-shadow: 0 0 10px #00ff8833; }
-        .bg-card { background-color: #121212; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Análise Pré-Jogo</title>
+<meta name="theme-color" content="#0a0a0a"/>
+<link rel="manifest" href="/manifest.json"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#00ff88;--green-dark:#00cc6a;--bg:#0a0a0a;--card:#141414;--border:#222;--text:#e8e8e8;--muted:#666;--red:#ff6b6b;--blue:#00aaff;--yellow:#ffaa00}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:24px 16px 48px}
+.menu-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;width:44px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;margin-bottom:28px}
+.menu-btn span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,10vw,4rem);line-height:1;letter-spacing:1px;margin-bottom:8px}
+h1 span{color:var(--green)}
+.subtitle{color:var(--muted);font-size:.85rem;margin-bottom:32px}
+.subtitle span{margin:0 6px;opacity:.4}
+input[type="text"]{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:1rem;padding:16px 20px;outline:none;transition:border-color .2s;margin-bottom:12px}
+input[type="text"]:focus{border-color:var(--green)}
+input[type="text"]::placeholder{color:var(--muted)}
+button.analisar{width:100%;background:var(--green);color:#000;border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;padding:16px;cursor:pointer;transition:background .2s;margin-bottom:20px}
+button.analisar:hover{background:var(--green-dark)}
+button.analisar:disabled{background:#1a3a2a;color:#2a6a4a;cursor:not-allowed}
+.exemplos{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:32px}
+.exemplos-label{color:var(--muted);font-size:.8rem}
+.chip{background:transparent;border:1px solid var(--border);border-radius:999px;color:var(--text);font-size:.8rem;padding:6px 14px;cursor:pointer;transition:all .2s}
+.chip:hover{border-color:var(--green);color:var(--green)}
+#resultado{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;font-size:.9rem;line-height:1.8;display:none;white-space:pre-wrap;word-break:break-word}
+#resultado.erro{border-color:#5a1a1a;background:#1a0a0a;color:var(--red)}
+#resultado.visivel{display:block}
+.loader{display:none;text-align:center;padding:24px 0;color:var(--muted);font-size:.85rem}
+.loader.visivel{display:block}
+.dot{display:inline-block;animation:blink 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+#resultado strong{color:var(--green);font-weight:600}
+.graficos-box{display:none;margin-top:20px}
+.graficos-box.visivel{display:block}
+.grafico-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.grafico-card h3{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1.1rem;margin-bottom:12px;letter-spacing:1px}
+.valor-box{display:none;background:#0a1a10;border:1px solid var(--green);border-radius:12px;padding:16px;margin-top:16px;margin-bottom:16px}
+.valor-box.visivel{display:block}
+.valor-box h3{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1.1rem;margin-bottom:8px}
+.valor-badge{display:inline-block;background:var(--green);color:#000;border-radius:8px;padding:8px 16px;font-weight:700;font-size:1rem}
+.resultado-jogo-box{display:none;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:16px}
+.resultado-jogo-box.visivel{display:block}
+.resultado-jogo-box h3{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1.2rem;margin-bottom:12px}
+.resultado-jogo-box input{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;padding:12px 16px;outline:none;margin-bottom:10px}
+.resultado-jogo-box input:focus{border-color:var(--green)}
+.btn-confirmar{width:100%;background:var(--green);color:#000;border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;padding:12px;cursor:pointer;margin-bottom:8px}
+.btn-manual{width:100%;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:.9rem;padding:10px;cursor:pointer;display:flex;gap:8px;justify-content:center}
+.badge{display:inline-block;border-radius:6px;padding:6px 14px;font-size:.85rem;font-weight:600;margin-top:8px}
+.badge.acertou{background:#1a4a2a;color:var(--green)}
+.badge.errou{background:#4a1a1a;color:var(--red)}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:10}
+.overlay.aberto{display:block}
+.sidebar{position:fixed;top:0;left:-320px;width:300px;height:100%;background:#111;border-right:1px solid var(--border);z-index:11;transition:left .3s;overflow-y:auto;padding:24px 16px}
+.sidebar.aberta{left:0}
+.sidebar h2{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--green);margin-bottom:8px}
+.acertos-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center}
+.acertos-box .numero{font-size:2.5rem;font-weight:700;color:var(--green)}
+.acertos-box .label{color:var(--muted);font-size:.8rem}
+.stats-row{display:flex;gap:8px;margin-bottom:16px}
+.stat-mini{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.stat-mini .n{font-size:1.3rem;font-weight:700}
+.stat-mini .l{font-size:.7rem;color:var(--muted)}
+.historico-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.historico-item:hover{border-color:var(--green)}
+.historico-item .jogo-nome{font-weight:600;font-size:.9rem;margin-bottom:4px;color:var(--green)}
+.historico-item .data{font-size:.75rem;color:var(--muted);margin-bottom:4px}
+.btn-apagar-item{background:#2a1a1a;color:var(--red);border:none;border-radius:6px;padding:4px 10px;font-size:.75rem;cursor:pointer;margin-top:8px;width:100%}
+.fechar-sidebar{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 16px;cursor:pointer;margin-bottom:16px;width:100%}
+.sem-historico{color:var(--muted);font-size:.85rem;text-align:center;padding:20px 0}
+.btn-apagar-tudo{background:transparent;border:1px solid #5a1a1a;color:var(--red);border-radius:8px;padding:8px 16px;cursor:pointer;margin-bottom:16px;width:100%;font-size:.8rem}
+.filtro-row{display:flex;gap:6px;margin-bottom:12px}
+.filtro-btn{flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px;font-size:.75rem;cursor:pointer}
+.filtro-btn.ativo{border-color:var(--green);color:var(--green)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:20;overflow-y:auto;padding:16px}
+.modal.aberto{display:block}
+.modal-content{background:#111;border:1px solid var(--border);border-radius:16px;padding:20px;max-width:600px;margin:0 auto}
+.modal-content h3{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1.4rem;margin-bottom:12px}
+.modal-analise{font-size:.9rem;line-height:1.8;white-space:pre-wrap;word-break:break-word;margin-bottom:16px}
+.modal-analise strong{color:var(--green)}
+.modal-nota{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;padding:10px;outline:none;margin-bottom:10px;min-height:80px;resize:vertical;font-family:'Inter',sans-serif}
+.modal-nota:focus{border-color:var(--green)}
+.modal-resultado-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px}
+.modal-resultado-box h4{font-family:'Bebas Neue',sans-serif;color:var(--green);font-size:1rem;margin-bottom:10px}
+.modal-resultado-box input{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;padding:10px 14px;outline:none;margin-bottom:8px}
+.modal-resultado-box input:focus{border-color:var(--green)}
+.modal-btn-row{display:flex;gap:8px;margin-bottom:8px}
+.modal-btn-row button{flex:1;border:none;border-radius:6px;padding:8px;font-size:.8rem;cursor:pointer;font-weight:600}
+.btn-acertou-m{background:#1a4a2a;color:var(--green)}
+.btn-errou-m{background:#4a1a1a;color:var(--red)}
+.btn-fechar-modal{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 16px;cursor:pointer;width:100%;margin-bottom:12px}
+</style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-2xl mx-auto">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-black text-[#00ff88] mb-2">MEU ANALISTA IA</h1>
-            <p class="text-gray-400">Inteligência Esportiva para Decisões Precisas</p>
-        </header>
+<body>
 
-        <div class="grid grid-cols-3 gap-4 mb-8">
-            <div class="bg-card p-4 rounded-xl neon-border text-center">
-                <p class="text-xs text-gray-400 uppercase">Taxa de Acerto</p>
-                <p class="text-2xl font-bold" id="winRate">0%</p>
-            </div>
-            <div class="bg-card p-4 rounded-xl border border-gray-800 text-center">
-                <p class="text-xs text-gray-400 uppercase">Total Green</p>
-                <p class="text-2xl font-bold text-[#00ff88]" id="totalGreen">0</p>
-            </div>
-            <div class="bg-card p-4 rounded-xl border border-gray-800 text-center">
-                <p class="text-xs text-gray-400 uppercase">Total Red</p>
-                <p class="text-2xl font-bold text-red-500" id="totalRed">0</p>
-            </div>
-        </div>
+<div class="overlay" id="overlay" onclick="fecharMenu()"></div>
 
-        <div class="flex gap-2 mb-6">
-            <input type="text" id="matchInput" placeholder="Ex: Liverpool x Chelsea" class="flex-1 bg-card border border-gray-800 p-4 rounded-xl focus:outline-none focus:border-[#00ff88]">
-            <select id="leagueSelect" class="bg-card border border-gray-800 p-4 rounded-xl">
-                <option value="Brasileirão">Brasileirão</option>
-                <option value="Premier League">Premier League</option>
-                <option value="Champions League">Champions League</option>
-            </select>
-            <button onclick="analisarJogo()" id="btnAnalisar" class="bg-[#00ff88] text-black font-bold px-6 rounded-xl hover:bg-[#00cc6e] transition-all">ANALISAR</button>
-        </div>
+<div class="sidebar" id="sidebar">
+  <button class="fechar-sidebar" onclick="fecharMenu()">✕ Fechar</button>
+  <h2>📊 Histórico</h2>
+  <div class="acertos-box">
+    <div class="numero" id="pct-acertos">0%</div>
+    <div class="label">Taxa de acertos</div>
+    <div style="color:var(--muted);font-size:.75rem;margin-top:4px" id="total-analises">0 análises</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-mini"><div class="n" id="stat-acertos" style="color:var(--green)">0</div><div class="l">Acertos</div></div>
+    <div class="stat-mini"><div class="n" id="stat-erros" style="color:var(--red)">0</div><div class="l">Erros</div></div>
+    <div class="stat-mini"><div class="n" id="stat-pendentes" style="color:var(--yellow)">0</div><div class="l">Pendentes</div></div>
+  </div>
+  <div class="filtro-row">
+    <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
+    <button class="filtro-btn" onclick="filtrar('acertou',this)">✅ Acertos</button>
+    <button class="filtro-btn" onclick="filtrar('errou',this)">❌ Erros</button>
+    <button class="filtro-btn" onclick="filtrar('pendente',this)">⏳</button>
+  </div>
+  <button class="btn-apagar-tudo" onclick="apagarTudo()">🗑️ Apagar todo o histórico</button>
+  <div id="lista-historico"><div class="sem-historico">Nenhuma análise ainda.</div></div>
+</div>
 
-        <div id="resultadoArea" class="hidden bg-card p-6 rounded-2xl border border-gray-800 mb-8">
-            <div id="loading" class="hidden text-center p-8">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00ff88] mx-auto mb-4"></div>
-                <p>Processando dados em tempo real...</p>
-            </div>
-            
-            <div id="analiseTexto" class="prose prose-invert max-w-none mb-6 text-gray-300"></div>
-            
-            <div class="max-w-[300px] mx-auto">
-                <canvas id="probChart"></canvas>
-            </div>
-        </div>
-
-        <h3 class="text-[#00ff88] font-bold mb-4 uppercase tracking-widest text-sm">Histórico de Análises</h3>
-        <div id="historico" class="space-y-3"></div>
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <button class="btn-fechar-modal" onclick="fecharModal()">✕ Fechar</button>
+    <h3 id="modal-titulo"></h3>
+    <div class="modal-analise" id="modal-analise"></div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:6px">📝 Anotações pessoais:</div>
+      <textarea class="modal-nota" id="modal-nota" placeholder="Adicione suas observações sobre este jogo..."></textarea>
+      <button onclick="salvarNota()" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.8rem;font-weight:600">Salvar nota</button>
     </div>
+    <div class="modal-resultado-box">
+      <h4>⚽ INSERIR RESULTADO FINAL</h4>
+      <input type="text" id="modal-placar" placeholder="Ex: 2x1 ou Bayern 2x1 PSG"/>
+      <button class="btn-confirmar" onclick="confirmarResultadoModal()">CONFIRMAR RESULTADO</button>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px;text-align:center">ou marque manualmente:</div>
+      <div class="modal-btn-row">
+        <button class="btn-acertou-m" onclick="marcarManual('acertou')">✅ Acertou</button>
+        <button class="btn-errou-m" onclick="marcarManual('errou')">❌ Errou</button>
+      </div>
+      <div id="modal-badge"></div>
+    </div>
+  </div>
+</div>
 
-    <script>
-        let myChart = null;
+<div class="menu-btn" onclick="abrirMenu()"><span></span><span></span><span></span></div>
+<h1>ANÁLISE <span>PRÉ-JOGO</span></h1>
+<p class="subtitle">IA com busca em tempo real<span>·</span>Dados reais<span>·</span>Análise profissional</p>
+<input type="text" id="jogo" placeholder="Ex: Flamengo x Palmeiras"/>
+<button class="analisar" id="btn" onclick="analisar()">ANALISAR</button>
+<div class="exemplos">
+<span class="exemplos-label">Exemplos:</span>
+<span class="chip" onclick="preencher('Fla x Pal')">Fla x Pal</span>
+<span class="chip" onclick="preencher('El Clásico')">El Clásico</span>
+<span class="chip" onclick="preencher('City x Arsenal')">City x Arsenal</span>
+<span class="chip" onclick="preencher('Majestoso')">Majestoso</span>
+</div>
+<div class="loader" id="loader">Buscando dados em tempo real<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+<div id="resultado"></div>
 
-        async function analisarJogo() {
-            const match = document.getElementById('matchInput').value;
-            const league = document.getElementById('leagueSelect').value;
-            const btn = document.getElementById('btnAnalisar');
-            const textoArea = document.getElementById('analiseTexto');
-            
-            if(!match) return alert("Digite o nome do jogo!");
+<div class="graficos-box" id="graficos-box">
+  <div class="grafico-card">
+    <h3>🎯 PROBABILIDADES</h3>
+    <canvas id="chart-prob" height="180"></canvas>
+  </div>
+  <div class="grafico-card">
+    <h3>📊 ESTATÍSTICAS COMPARATIVAS</h3>
+    <canvas id="chart-stats" height="260"></canvas>
+  </div>
+  <div class="grafico-card">
+    <h3>💰 ODDS DAS CASAS</h3>
+    <canvas id="chart-odds" height="200"></canvas>
+  </div>
+</div>
 
-            document.getElementById('resultadoArea').classList.remove('hidden');
-            document.getElementById('loading').classList.remove('hidden');
-            textoArea.innerHTML = "";
-            btn.disabled = true;
+<div class="valor-box" id="valor-box">
+  <h3>🎰 MELHOR APOSTA DA RODADA</h3>
+  <div id="valor-texto"></div>
+</div>
 
-            try {
-                const response = await fetch('/api/analisar', {
-                    method: 'POST',
-                    body: JSON.stringify({ match, league })
-                });
+<div class="resultado-jogo-box" id="resultado-jogo-box">
+  <h3>⚽ RESULTADO FINAL DO JOGO</h3>
+  <input type="text" id="placar-input" placeholder="Ex: 2x1 ou Bayern 2x1 PSG"/>
+  <button class="btn-confirmar" onclick="confirmarResultado()">CONFIRMAR RESULTADO</button>
+  <div style="font-size:.8rem;color:var(--muted);margin:8px 0;text-align:center">ou marque manualmente:</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button onclick="marcarManualPrincipal('acertou')" style="flex:1;background:#1a4a2a;color:var(--green);border:none;border-radius:6px;padding:8px;cursor:pointer;font-weight:600">✅ Acertou</button>
+    <button onclick="marcarManualPrincipal('errou')" style="flex:1;background:#4a1a1a;color:var(--red);border:none;border-radius:6px;padding:8px;cursor:pointer;font-weight:600">❌ Errou</button>
+  </div>
+  <div id="badge-resultado"></div>
+</div>
 
-                if (!response.ok) throw new Error('Erro na resposta do servidor');
+<script>
+let historico=JSON.parse(localStorage.getItem('historico')||'[]');
+let jogoAtual='';
+let idxAtual=-1;
+let modalIdx=-1;
+let filtroAtual='todos';
+let chartProb=null,chartStats=null,chartOdds=null;
 
-                document.getElementById('loading').classList.add('hidden');
-                
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    textoArea.innerHTML += decoder.decode(value);
-                }
+function salvarHistorico(){localStorage.setItem('historico',JSON.stringify(historico));}
 
-                atualizarGrafico();
-            } catch (error) {
-                textoArea.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`;
-            } finally {
-                btn.disabled = false;
+function abrirMenu(){
+  document.getElementById('sidebar').classList.add('aberta');
+  document.getElementById('overlay').classList.add('aberto');
+  renderHistorico();
+}
+function fecharMenu(){
+  document.getElementById('sidebar').classList.remove('aberta');
+  document.getElementById('overlay').classList.remove('aberto');
+}
+
+function filtrar(tipo,btn){
+  filtroAtual=tipo;
+  document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderHistorico();
+}
+
+function abrirModal(idx){
+  const h=historico[idx];
+  modalIdx=idx;
+  document.getElementById('modal-titulo').textContent='⚽ '+h.jogo+' — '+h.data;
+  document.getElementById('modal-analise').innerHTML=(h.analise||'Análise não disponível').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  document.getElementById('modal-placar').value=h.placar||'';
+  document.getElementById('modal-nota').value=h.nota||'';
+  const badge=document.getElementById('modal-badge');
+  badge.innerHTML=h.resultado?`<span class="badge ${h.resultado}" style="display:inline-block;margin-top:8px">${h.resultado==='acertou'?'✅ Acertou!':'❌ Errou'}</span>`:'';
+  document.getElementById('modal').classList.add('aberto');
+}
+
+function fecharModal(){
+  document.getElementById('modal').classList.remove('aberto');
+  modalIdx=-1;
+  renderHistorico();
+}
+
+function salvarNota(){
+  if(modalIdx<0) return;
+  historico[modalIdx].nota=document.getElementById('modal-nota').value;
+  salvarHistorico();
+  alert('Nota salva!');
+}
+
+function marcarManual(res){
+  if(modalIdx<0) return;
+  historico[modalIdx].resultado=res;
+  salvarHistorico();
+  document.getElementById('modal-badge').innerHTML=`<span class="badge ${res}" style="display:inline-block;margin-top:8px">${res==='acertou'?'✅ Acertou!':'❌ Errou'}</span>`;
+}
+
+function marcarManualPrincipal(res){
+  if(idxAtual<0) return;
+  historico[idxAtual].resultado=res;
+  salvarHistorico();
+  document.getElementById('badge-resultado').innerHTML=`<span class="badge ${res}">${res==='acertou'?'✅ Palpite CERTO!':'❌ Palpite ERRADO'}</span>`;
+}
+
+function confirmarResultadoModal(){
+  const placar=document.getElementById('modal-placar').value.trim();
+  if(!placar||modalIdx<0) return;
+  const h=historico[modalIdx];
+  h.placar=placar;
+  const resultado=calcularResultado(placar,h.palpite||'',h.jogo);
+  h.resultado=resultado;
+  salvarHistorico();
+  document.getElementById('modal-badge').innerHTML=`<span class="badge ${resultado}" style="display:inline-block;margin-top:8px">${resultado==='acertou'?'✅ Palpite CERTO!':'❌ Palpite ERRADO'}</span>`;
+}
+
+function calcularResultado(placar,palpite,jogo){
+  const palpiteLower=palpite.toLowerCase();
+  const times=jogo.toLowerCase().split(/\s*x\s*/);
+  const time1=times[0]?.trim()||'';
+  const time2=times[1]?.trim()||'';
+  const nums=placar.match(/(\d+)\s*[x×]\s*(\d+)/);
+  if(!nums) return 'errou';
+  const g1=parseInt(nums[1]);
+  const g2=parseInt(nums[2]);
+  if(g1>g2&&palpiteLower.includes(time1)) return 'acertou';
+  if(g2>g1&&palpiteLower.includes(time2)) return 'acertou';
+  if(g1===g2&&(palpiteLower.includes('empate')||palpiteLower.includes('draw'))) return 'acertou';
+  return 'errou';
+}
+
+function renderHistorico(){
+  const lista=document.getElementById('lista-historico');
+  const acertos=historico.filter(h=>h.resultado==='acertou').length;
+  const erros=historico.filter(h=>h.resultado==='errou').length;
+  const pendentes=historico.filter(h=>!h.resultado).length;
+  const comResultado=acertos+erros;
+  const pctVal=comResultado>0?Math.round((acertos/comResultado)*100):0;
+
+  document.getElementById('pct-acertos').textContent=pctVal+'%';
+  document.getElementById('total-analises').textContent=historico.length+' análises';
+  document.getElementById('stat-acertos').textContent=acertos;
+  document.getElementById('stat-erros').textContent=erros;
+  document.getElementById('stat-pendentes').textContent=pendentes;
+
+  let filtrado=historico;
+  if(filtroAtual==='acertou') filtrado=historico.filter(h=>h.resultado==='acertou');
+  else if(filtroAtual==='errou') filtrado=historico.filter(h=>h.resultado==='errou');
+  else if(filtroAtual==='pendente') filtrado=historico.filter(h=>!h.resultado);
+
+  if(filtrado.length===0){lista.innerHTML='<div class="sem-historico">Nenhuma análise encontrada.</div>';return;}
+
+  lista.innerHTML=filtrado.slice().reverse().map(h=>{
+    const idx=historico.indexOf(h);
+    const badgeHtml=h.resultado?`<span class="badge ${h.resultado}" style="display:inline-block;margin-top:4px;font-size:.75rem">${h.resultado==='acertou'?'✅ Acertou':'❌ Errou'}</span>`:'<span style="color:var(--yellow);font-size:.75rem">⏳ Pendente</span>';
+    return `<div class="historico-item" onclick="abrirModal(${idx})">
+      <div class="jogo-nome">⚽ ${h.jogo}</div>
+      <div class="data">📅 ${h.data}${h.placar?` • 📊 ${h.placar}`:''}</div>
+      ${h.nota?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">📝 ${h.nota.substring(0,50)}${h.nota.length>50?'...':''}</div>`:''}
+      ${badgeHtml}
+      <div style="margin-top:4px;font-size:.7rem;color:var(--green)">👆 Toque para abrir</div>
+      <button class="btn-apagar-item" onclick="event.stopPropagation();apagarAnalise(${idx})">🗑️ Apagar</button>
+    </div>`;
+  }).join('');
+}
+
+function apagarAnalise(idx){
+  if(confirm('Apagar esta análise?')){historico.splice(idx,1);salvarHistorico();renderHistorico();}
+}
+function apagarTudo(){
+  if(confirm('Apagar TODO o histórico?')){historico=[];salvarHistorico();renderHistorico();}
+}
+function preencher(t){document.getElementById('jogo').value=t;}
+
+function extrairPalpite(texto){
+  const linhas=texto.split('\n');
+  for(const linha of linhas){
+    if(linha.includes('PALPITE FINAL')||linha.includes('💡')){
+      return linha.replace(/💡|PALPITE FINAL:|[\*#]/g,'').trim();
+    }
+  }
+  return '';
+}
+
+function extrairMelhorAposta(texto){
+  const linhas=texto.split('\n');
+  for(const linha of linhas){
+    if(linha.includes('MELHOR APOSTA')||linha.includes('🎰')){
+      return linha.replace(/🎰|MELHOR APOSTA:|[\*#]/g,'').trim();
+    }
+  }
+  return '';
+}
+
+function extrairNum(texto,regex){
+  const m=texto.match(regex);
+  return m?parseFloat(m[1]):0;
+}
+
+function gerarGraficos(texto,jogo){
+  const times=jogo.split(/\s*x\s*/i);
+  const t1=times[0]?.trim()||'Time 1';
+  const t2=times[1]?.trim()||'Time 2';
+
+  const prob1=extrairNum(texto,new RegExp('Vitória.*?'+t1+'.*?(\\d+)%','i'))||extrairNum(texto,/Vitória[^%\n]*?(\d+)%/i)||35;
+  const probE=extrairNum(texto,/Empate.*?(\d+)%/i)||25;
+  const prob2=extrairNum(texto,new RegExp('Vitória.*?'+t2+'.*?(\\d+)%','i'))||40;
+  const over=extrairNum(texto,/Mais de 2\.5.*?(\d+)%/i)||50;
+  const under=extrairNum(texto,/Menos de 2\.5.*?(\d+)%/i)||50;
+  const ambos=extrairNum(texto,/Ambos marcam.*?(\d+)%/i)||40;
+
+  const posse1=extrairNum(texto,/Posse.*?(\d+)%/i)||50;
+  const posse2=100-posse1;
+  const gols1=extrairNum(texto,/gols marcados.*?(\d+\.?\d*)\s*\//i)||1.5;
+  const gols2=extrairNum(texto,/gols marcados.*?\/\s*(\d+\.?\d*)/i)||1.5;
+  const cart1=extrairNum(texto,/amarelos.*?(\d+\.?\d*)\s*\//i)||1.5;
+  const cart2=extrairNum(texto,/amarelos.*?\/\s*(\d+\.?\d*)/i)||1.5;
+  const esc1=extrairNum(texto,/Escanteios.*?(\d+\.?\d*)\s*\//i)||5;
+  const esc2=extrairNum(texto,/Escanteios.*?\/\s*(\d+\.?\d*)/i)||5;
+  const chutes1=extrairNum(texto,/Chutes.*?(\d+\.?\d*)\s*\//i)||4;
+  const chutes2=extrairNum(texto,/Chutes.*?\/\s*(\d+\.?\d*)/i)||4;
+
+  const odd1=extrairNum(texto,/Vitória.*?(\d+\.\d+)/i)||2.0;
+  const oddE=extrairNum(texto,/Empate.*?(\d+\.\d+)/i)||3.2;
+  const odd2=extrairNum(texto,/Vitória[^%\n]*?(\d+\.\d+)/gi)||3.5;
+  const oddOver=extrairNum(texto,/Mais de 2\.5.*?(\d+\.\d+)/i)||1.9;
+  const oddUnder=extrairNum(texto,/Menos de 2\.5.*?(\d+\.\d+)/i)||1.9;
+
+  document.getElementById('graficos-box').className='graficos-box visivel';
+
+  const melhorAposta=extrairMelhorAposta(texto);
+  if(melhorAposta){
+    document.getElementById('valor-box').className='valor-box visivel';
+    document.getElementById('valor-texto').innerHTML=`<div class="valor-badge">🎯 ${melhorAposta}</div>`;
+  }
+
+  if(chartProb) chartProb.destroy();
+  if(chartStats) chartStats.destroy();
+  if(chartOdds) chartOdds.destroy();
+
+  chartProb=new Chart(document.getElementById('chart-prob'),{
+    type:'doughnut',
+    data:{
+      labels:[t1,'Empate',t2,'Over 2.5','Under 2.5','Ambos marcam'],
+      datasets:[{data:[prob1,probE,prob2,over,under,ambos],backgroundColor:['#00ff88','#666666','#ff6b6b','#00aaff','#ffaa00','#cc44ff'],borderWidth:0}]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:'#e8e8e8',font:{size:10}}}}}
+  });
+
+  chartStats=new Chart(document.getElementById('chart-stats'),{
+    type:'bar',
+    data:{
+      labels:['Posse %','Gols Marc.','Cartões','Escanteios','Chutes'],
+      datasets:[
+        {label:t1,data:[posse1,gols1,cart1,esc1,chutes1],backgroundColor:'#00ff88'},
+        {label:t2,data:[posse2,gols2,cart2,esc2,chutes2],backgroundColor:'#ff6b6b'}
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:'#e8e8e8'}}},scales:{x:{ticks:{color:'#888'}},y:{ticks:{color:'#888'},grid:{color:'#1a1a1a'}}}}
+  });
+
+  chartOdds=new Chart(document.getElementById('chart-odds'),{
+    type:'bar',
+    data:{
+      labels:[t1,'Empate',t2,'Over 2.5','Under 2.5'],
+      datasets:[{label:'Odds',data:[odd1,oddE,typeof odd2==='number'?odd2:3.5,oddOver,oddUnder],backgroundColor:['#00ff88','#666','#ff6b6b','#00aaff','#ffaa00'],borderWidth:0}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888'}},y:{ticks:{color:'#888'},grid:{color:'#1a1a1a'}}}}
+  });
+}
+
+function confirmarResultado(){
+  const placar=document.getElementById('placar-input').value.trim();
+  if(!placar||idxAtual<0) return;
+  const h=historico[idxAtual];
+  h.placar=placar;
+  const resultado=calcularResultado(placar,h.palpite||'',jogoAtual);
+  h.resultado=resultado;
+  salvarHistorico();
+  document.getElementById('badge-resultado').innerHTML=`<span class="badge ${resultado}">${resultado==='acertou'?'✅ Palpite CERTO!':'❌ Palpite ERRADO'}</span>`;
+}
+
+async function analisar(){
+  const jogo=document.getElementById('jogo').value.trim();
+  const resultado=document.getElementById('resultado');
+  const loader=document.getElementById('loader');
+  const btn=document.getElementById('btn');
+  const boxResultado=document.getElementById('resultado-jogo-box');
+  const badge=document.getElementById('badge-resultado');
+  const placarInput=document.getElementById('placar-input');
+  if(!jogo){resultado.className='visivel erro';resultado.innerHTML='⚠️ Digite o nome do jogo.';return;}
+  btn.disabled=true;
+  resultado.className='visivel';
+  resultado.innerHTML='';
+  loader.className='visivel';
+  boxResultado.className='resultado-jogo-box';
+  badge.innerHTML='';
+  placarInput.value='';
+  document.getElementById('graficos-box').className='graficos-box';
+  document.getElementById('valor-box').className='valor-box';
+  jogoAtual=jogo;
+
+  try{
+    const r=await fetch('/api/analisar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jogo})});
+    const reader=r.body.getReader();
+    const decoder=new TextDecoder();
+    let textoCompleto='';
+    let jogoSalvo=false;
+
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      const chunk=decoder.decode(value);
+      const lines=chunk.split('\n');
+      for(const line of lines){
+        if(line.startsWith('data: ')){
+          const data=line.slice(6);
+          if(data==='[DONE]'){
+            loader.className='';
+            if(!jogoSalvo&&textoCompleto){
+              const palpite=extrairPalpite(textoCompleto);
+              historico.push({jogo,data:new Date().toLocaleDateString('pt-BR'),palpite,analise:textoCompleto,resultado:null,nota:''});
+              idxAtual=historico.length-1;
+              salvarHistorico();
+              jogoSalvo=true;
+              boxResultado.className='resultado-jogo-box visivel';
+              gerarGraficos(textoCompleto,jogo);
             }
+            continue;
+          }
+          try{
+            const parsed=JSON.parse(data);
+            if(parsed.texto){
+              textoCompleto+=parsed.texto;
+              resultado.innerHTML=textoCompleto.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+            }
+            if(parsed.erro){
+              resultado.className='visivel erro';
+              resultado.innerHTML='⚠️ '+parsed.erro;
+              loader.className='';
+            }
+          }catch{}
         }
-
-        function atualizarGrafico() {
-            const ctx = document.getElementById('probChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Casa', 'Empate', 'Fora'],
-                    datasets: [{
-                        data: [45, 25, 30],
-                        backgroundColor: ['#00ff88', '#333', '#666'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { plugins: { legend: { labels: { color: '#fff' } } } }
-            });
-        }
-    </script>
+      }
+    }
+  }catch(e){
+    resultado.className='visivel erro';
+    resultado.innerHTML='⚠️ '+(e.message||'Erro ao buscar análise.');
+    loader.className='';
+  }finally{btn.disabled=false;}
+}
+document.getElementById('jogo').addEventListener('keydown',e=>{if(e.key==='Enter')analisar();});
+</script>
 </body>
 </html>
- 
